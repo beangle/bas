@@ -66,19 +66,20 @@ parent 中 `javacOptions --release` 提升后，必须同步确认 sbt-assembly 
 
 ### 3.1 启动链（Tomcat 托管模式）
 
-`bin/start.sh`：
+托管启动由 `basctl start` 生成 jstart spec、`jstart` 调用 `basctl make tomcat-dist`
+准备引擎目录并写出最终 catalina 启动命令。关键点：
 
-```bash
-CLASSPATH="$SERVER_BASE/bin/bootstrap.jar:$SAS_HOME/bin/lib/beangle-sas-juli-$beangle_sas_ver.jar"
-java -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager \
-     -Dsas.home="$SAS_HOME" -Dcatalina.base=... org.apache.catalina.startup.Bootstrap start
-```
-
-- juli jar 位于**系统类路径**且靠前，JVM parent-first 委派使容器代码拿到的
-  `org.apache.juli.logging.LogFactory` 是 fat jar 内的 `SLF4JLogFactory`（而不是 tomcat-embed 里的原生实现）。
+- `beangle-sas-juli` 是 tomcat 引擎的默认依赖（basctl `applyEngineDefault` 补上，见
+  `bas/tomcatmaker.d`），随 `[engine]` 段解析到本地；
+- creator 把它放在 **Catalina 系统类路径**（`-cp`，与 `bin/bootstrap.jar` 同级），而不是
+  `lib/`：Catalina 的 `Bootstrap` 在静态初始化里就要用 `org.apache.juli.logging.LogFactory`；
+- 同时删除发行包自带的 `bin/tomcat-juli.jar`（creator 检测到引擎 classpath 含 juli 时删除），
+  由本 jar 顶替。因此容器代码拿到的 `org.apache.juli.logging.LogFactory` 是 fat jar 内的
+  `SLF4JLogFactory`（而不是原生实现）；
+- juli fat jar **不能**带 `META-INF/beangle/dependencies`：它自带后会被 webapp 的
+  `DependencyClassLoader` 当成引擎清单读走，把 juli 自身的依赖误当应用依赖解析。
+  `build.sbt` 的 assembly merge 规则已显式 `discard` 该条目；
 - `-Dsas.home` 是 `SLF4JConfigurator` 定位配置文件的依据。
-- TomcatMaker 生成引擎目录时会**删除 tomcat 自带的 `tomcat-juli.jar`**（`TomcatMaker.scala` 注释
-  "remove tomcat-juli,using beangle-sas-juli"），由本 jar 顶替。
 
 ### 3.2 日志链路
 
@@ -102,17 +103,17 @@ java -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager \
 
 ### 3.4 哪些模式不用 juli
 
-引擎嵌入模式（`launch.sh` / ems native，`beangle-sas-engine` + 普通 slf4j + 真 logback jar）
-**不加载 juli jar**，直接使用普通 logging 栈。juli 只服务 `start.sh` 托管的 Tomcat 进程。
+引擎嵌入模式（`basctl run` / ems native，`beangle-sas-engine` + 普通 slf4j + 真 logback jar）
+**不加载 juli jar**，直接使用普通 logging 栈。juli 只服务 `basctl start` 托管的 Tomcat 进程。
 
 ## 4. 用法
 
-- **安装**：`init.sh` 的 `artifacts` 清单会下载并软链到 `$SAS_HOME/bin/lib/`；
-  jar 名中的版本取自 `env.sh` 的 `beangle_sas_ver`，与发布版本必须一致。
+- **获取**：与其它引擎构件一样由 `basctl`/`jstart` 解析，在 spec 的 `[engine]` 段以
+  `org.beangle.sas:beangle-sas-juli:<version>` 出现，版本与发布版本一致。
 - **自定义容器日志**：编辑 `$SAS_HOME/conf/logback-catalina.xml`。
   ⚠️ **appender、listener 等类名必须写 shade 后的 `org.beangle.sas.logback.*`**，写 `ch.qos.logback.*` 会 ClassNotFound。
   内置默认模板：`juli/src/main/resources/logback-catalina.xml`。
-- **升级**：发布新版本后同步 `env.sh` 的 `beangle_sas_ver`（以及 `init.sh`/`start.sh` 无需改动，按变量取值）。
+- **升级**：发布新版本后同步 `<bas version>`（basctl 据此解析引擎与 juli 构件）。
 - **关于外置 logback**：托管模式不依赖外置 logback；引擎模式需要。两者互不替代。
 
 ## 5. 发版自检清单
@@ -138,7 +139,6 @@ unzip -l beangle-sas-juli-<ver>.jar | grep META-INF/services
 | `juli/src/main/java/org/beangle/sas/tomcat/juli/SLF4JConfigurator.java` | 唯一源码类，配置加载入口 |
 | `juli/src/main/resources/logback-catalina.xml` | 内置默认容器日志配置（shade 后类名） |
 | `juli/src/main/resources/META-INF/services/*` | 预先写好 shade 名的服务文件 |
-| `server/src/main/resources/bin/env.sh` | `beangle_sas_ver` 版本变量 |
-| `server/src/main/resources/bin/init.sh` | artifacts 清单（下载/软链到 bin/lib） |
-| `server/src/main/resources/bin/start.sh` | 托管启动 classpath 装配 |
-| `core/src/main/scala/org/beangle/sas/maker/TomcatMaker.scala` | 删除 tomcat 自带 tomcat-juli.jar |
+| `build.sbt`（`juli` 段 merge 规则） | 丢弃 `META-INF/beangle/dependencies` |
+| `basctl/src/bas/enginecreator.d` | juli 上系统 classpath、删 `bin/tomcat-juli.jar` |
+| `basctl/src/bas/tomcatmaker.d` | `applyEngineDefault` 为 tomcat 引擎补 `beangle-sas-juli` |

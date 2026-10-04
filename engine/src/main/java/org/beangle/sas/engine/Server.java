@@ -156,6 +156,19 @@ public interface Server {
       new File(this.docBase).mkdirs();
     }
 
+    /**
+     * 显式指定 docBase：引擎入口 main 已经算好布局并解压好 webapp 时使用，跳过
+     * guessDocBase 的 IDE/默认路径探测。
+     */
+    public void setDocBase(String docBase) {
+      if (null != docBase && !docBase.isEmpty()) {
+        this.docBase = docBase;
+        new File(docBase).mkdirs();
+      } else {
+        guessDocBase();
+      }
+    }
+
     public void cleanup() {
       if (null != docBase) {
         var dir = docBase;

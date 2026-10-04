@@ -105,10 +105,11 @@ public class DependencyClassLoader extends ParallelWebappClassLoader {
 
   private void normalizeBase() {
     if (null == base) {
-      this.base = System.getProperty("user.home") + "/.m2/repository";
-    } else {
-      if (base.endsWith("/")) this.base = base.substring(0, base.length() - 1);
+      // jstart 把实际本地仓库经 --Dsas.repo 透传（支持 --local，快照与正式版同库）
+      var repo = System.getProperty("sas.repo");
+      this.base = (null != repo && !repo.isBlank()) ? repo : System.getProperty("user.home") + "/.m2/repository";
     }
+    while (this.base.endsWith("/")) this.base = this.base.substring(0, this.base.length() - 1);
     new File(this.base).mkdirs();
   }
 

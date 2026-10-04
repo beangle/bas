@@ -28,6 +28,7 @@ public class CmdOptions {
   public static Server.Config parse(String[] args) {
     String base = null;
     String path = "";
+    String docBase = null;
     int port = -1;
     boolean devMode = false;
     Map<String, String> properties = new HashMap<>();
@@ -35,6 +36,8 @@ public class CmdOptions {
       if (arg.startsWith("--")) {
         if (arg.startsWith("--path=")) {
           path = arg.substring("--path=".length());
+        } else if (arg.startsWith("--docBase=")) {
+          docBase = arg.substring("--docBase=".length()).trim();
         } else if (arg.startsWith("--port=")) {
           port = toInt("--port", arg.substring("--port=".length()));
         } else if (arg.startsWith("--dev=")) {
@@ -74,7 +77,7 @@ public class CmdOptions {
     config.properties.putAll(properties);
     config.defaultServletSupport = config.getBoolean("server.defaultServletSupport").orElse(config.defaultServletSupport);
     config.devMode = devMode || EnvProfile.isDevMode();
-    config.guessDocBase();
+    config.setDocBase(docBase);
     return config;
   }
 

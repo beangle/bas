@@ -128,32 +128,37 @@ public class Dependency {
      * @return
      */
     private String findLatest(Artifact artifact) {
-      var tmpFile = new File(snapshotBase + "/" + artifact.artifactId + "-" + artifact.version + "." + artifact.packaging);
-      var parent =
-        new File(getDefaultSnapshotBase() + "/" + artifact.groupId.replace('.', '/') + "/" + artifact.artifactId + "/"
-          + artifact.version + "/");
-      //查找该SNAPSHOT版本对应的文件夹下的最新版本
-      if (parent.exists()) {
-        var versions = parent.list();
-        if (null == versions || versions.length == 0) {
-          return tmpFile.getAbsolutePath();
-        } else {
-          Arrays.sort(versions);
-          //查找版本最大的一个，最大即最新
-          var newest = new File(parent.getAbsolutePath() + "/" + versions[versions.length - 1]);
-          if (tmpFile.exists()) {
-            if (tmpFile.lastModified() > newest.lastModified()) {
-              return tmpFile.getAbsolutePath();
-            } else {
-              return newest.getAbsolutePath();
-            }
-          } else {
-            return newest.getAbsolutePath();
-          }
-        }
-      } else {
-        return tmpFile.getAbsolutePath();
+      var flat = new File(snapshotBase + "/" + artifact.artifactId + "-" + artifact.version + "." + artifact.packaging);
+      // 时间戳文件名基于去掉 -SNAPSHOT 的版本号：demo-1.0-20260101.010101-1.jar
+      var baseVersion = artifact.version.endsWith("-SNAPSHOT")
+        ? artifact.version.substring(0, artifact.version.length() - "-SNAPSHOT".length())
+        : artifact.version;
+      var prefix = artifact.artifactId + "-" + baseVersion;
+      var suffix = "." + artifact.packaging;
+      List<File> candidates = new ArrayList<>();
+      if (flat.isFile()) candidates.add(flat);
+      // 仓库同一目录：jstart 显式 --local 时快照与正式版合二为一
+      addNewest(candidates, new File(base, dirPath(artifact)), prefix, suffix);
+      // 默认快照库：<repo>/../snapshots（jstart 默认、beangle-boot 默认）
+      addNewest(candidates, new File(getDefaultSnapshotBase(), dirPath(artifact)), prefix, suffix);
+      File best = null;
+      for (File f : candidates) {
+        if (best == null || f.lastModified() > best.lastModified()) best = f;
       }
+      return (best != null ? best : flat).getAbsolutePath();
+    }
+
+    /** 版本目录下按文件名排序取最新的匹配文件（maven 时间戳/版本号递增），后缀过滤排除元数据。 */
+    private static void addNewest(List<File> candidates, File dir, String prefix, String suffix) {
+      File[] files = dir.listFiles(f -> f.isFile() && f.getName().startsWith(prefix) && f.getName().endsWith(suffix));
+      if (files == null || files.length == 0) return;
+      Arrays.sort(files, Comparator.comparing(File::getName));
+      candidates.add(files[files.length - 1]);
+    }
+
+    /** maven 仓库中的版本目录：g/a/version。 */
+    private static String dirPath(Artifact artifact) {
+      return artifact.groupId.replace('.', '/') + "/" + artifact.artifactId + "/" + artifact.version;
     }
 
     private String getDefaultSnapshotBase() {
