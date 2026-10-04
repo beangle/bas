@@ -5,7 +5,7 @@ import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtassembly.{MergeStrategy, PathList}
 
 organization := "org.beangle.sas"
-version := "0.13.17-SNAPSHOT"
+version := "0.14.0"
 
 scmInfo := Some(
   ScmInfo(
@@ -27,34 +27,21 @@ description := "The Beangle Simple Application Server (SAS)"
 homepage := Some(uri("https://beangle.github.io/sas/index.html"))
 
 val beangle_commons_ver = "6.3.7"
-val beangle_template_ver = "0.2.14"
-val beangle_boot_ver = "0.1.30"
 val apache_tomcat_ver = "11.0.26"
-val io_undertow_ver = "2.4.3.Final"
-val undertow_ee_ver = "2.0.2.Final"
+val io_undertow_ver = "2.4.4.Final"
+val undertow_ee_ver = "2.0.3.Final"
 
 val beangle_commons = "org.beangle.commons" % "beangle-commons" % beangle_commons_ver
-val beangle_boot = "org.beangle.boot" % "beangle-boot" % beangle_boot_ver
-val beangle_template = "org.beangle.template" % "beangle-template" % beangle_template_ver
-
 val tomcat_juli = "org.apache.tomcat" % "tomcat-juli" % apache_tomcat_ver
 val undertow_core = "io.undertow" % "undertow-core" % io_undertow_ver % "optional"
 val undertow_servlet = "io.undertow.ee" % "undertow-servlet" % undertow_ee_ver % "optional"
 val tomcat_embeded_core = ("org.apache.tomcat.embed" % "tomcat-embed-core" % apache_tomcat_ver % "optional").exclude("org.apache.tomcat", "tomcat-annotations-api")
-val commonDeps = Seq(beangle_commons, beangle_boot, scalatest)
-val jcl_over_slf4j = "org.slf4j" % "jcl-over-slf4j" % "2.0.19"
+val commonDeps = Seq(beangle_commons, scalatest)
+val jcl_over_slf4j = "org.slf4j" % "jcl-over-slf4j" % "2.0.20"
 
 lazy val root = (project in file("."))
   .settings(common,publish / skip := true)
-  .aggregate(core, engine, juli, server)
-
-lazy val core = (project in file("core"))
-  .settings(
-    name := "beangle-sas-core",
-    common,
-    libraryDependencies ++= commonDeps,
-    libraryDependencies ++= Seq(beangle_template, freemarker)
-  )
+  .aggregate(engine, juli)
 
 lazy val engine = (project in file("engine"))
   .settings(
@@ -89,6 +76,9 @@ lazy val juli = (project in file("juli"))
         xs map (_.toLowerCase) match { //这里转成了小写，后面判断也使用小写
           case ("manifest.mf" :: Nil) | ("notice" :: Nil) | ("license" :: Nil) => MergeStrategy.discard
           case "maven" :: xs => MergeStrategy.discard
+          // 容器日志 jar 只做日志桥接，随包生成的 META-INF/beangle/dependencies 会被
+          // webapp 的 DependencyClassLoader 当成引擎清单读走，必须丢弃
+          case "beangle" :: _ => MergeStrategy.discard
           case "services" :: "jakarta.servlet.servletcontainerinitializer" :: Nil => MergeStrategy.discard
           case "services" :: "org.slf4j.spi.slf4jserviceprovider" :: Nil => MergeStrategy.discard
           case "services" :: "org.apache.commons.logging.logfactory" :: Nil => MergeStrategy.discard
@@ -100,12 +90,4 @@ lazy val juli = (project in file("juli"))
     },
     assemblyJarName := "beangle-sas-juli-" + version.value + ".jar",
     Compile / packageBin := Def.uncached(assembly).value
-  )
-
-lazy val server = (project in file("server"))
-  .disablePlugins(AssemblyPlugin)
-  .settings(
-    name := "beangle-sas",
-    common,
-    packageBin / artifact := Artifact(moduleName.value).withType("zip").withExtension("zip")
   )
