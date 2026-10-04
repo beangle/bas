@@ -1,4 +1,4 @@
-# Beangle SAS
+# Beangle Bas Server
 
 简化和便捷 war 包发布、加强管理的定制应用服务器，基于 Tomcat 与 Undertow 构建。
 
@@ -6,10 +6,10 @@
 
 - **多实例管理**：一套安装目录下，通过配置文件管理多个 JVM/应用实例（Farm / Server），支持一键启停、状态查看
 - **双引擎支持**：Tomcat 10 / 11（11 默认虚拟线程，JDK 21+）与 Undertow 2.4，按实例选择
-- **嵌入模式**：`basctl run`（组件目录里是 `sas.sh run`）直接启动单个 war / Maven 坐标 / 远端 URL，参数顺序无关，无需手工配置
+- **嵌入模式**：`basctl run`（组件目录里是 `bas.sh run`）直接启动单个 war / Maven 坐标 / 远端 URL，参数顺序无关，无需手工配置
 - **控制面 / 运行时分离**：`bin/*.sh` 只做薄封装，容器编排交给 [`basctl`](https://github.com/beangle/basctl)，依赖解析与启动交给 [`jstart`](https://github.com/beangle/jstart)
-- **依赖自动解析**：通过本机 `jstart` 命令解析并下载 war 及其依赖，sas 只负责编排与生成
-- **远程配置分发**：`sas.sh pull`（`basctl pull`）从控制端拉取 `server.xml`，`start.sh` 启动前自动检查远端配置
+- **依赖自动解析**：通过本机 `jstart` 命令解析并下载 war 及其依赖，bas 只负责编排与生成
+- **远程配置分发**：`bas.sh pull`（`basctl pull`）从控制端拉取 `server.xml`，`start.sh` 启动前自动检查远端配置
 - **统一日志**：`juli` 模块将 Tomcat 日志桥接到 SLF4J / Logback，集中管理
 - **防火墙配置生成**：由 basctl 按 `conf/server.xml` 生成 firewalld 端口规则
 - **JNDI 资源与 Realm**：支持 Webapp 级 JNDI 资源引用与安全域配置
@@ -17,7 +17,7 @@
 ## 架构
 
 ```
-beangle-sas
+beangle-bas
 ├── engine   # Tomcat / Undertow 嵌入式运行时
 └── juli     # Tomcat juli → SLF4J/Logback 日志桥接（shaded 独立 jar）
 ```
@@ -30,29 +30,29 @@ beangle-sas
 再用 `basctl init` 初始化目录。控制脚本（`bin/*.sh`）内嵌在 `basctl` 里，随其版本发布：
 
 ```bash
-basctl init /opt/sas          # 写入 /opt/sas/bin/*.sh 并建 conf/
-basctl init --force /opt/sas  # 升级 basctl 后刷新脚本
+basctl init /opt/bas          # 写入 /opt/bas/bin/*.sh 并建 conf/
+basctl init --force /opt/bas  # 升级 basctl 后刷新脚本
 ```
 
-之后编辑 `conf/server.xml`（或用 `bin/sas.sh pull` 从控制端拉取）和 `bin/setenv.sh`，
+之后编辑 `conf/server.xml`（或用 `bin/bas.sh pull` 从控制端拉取）和 `bin/setenv.sh`，
 再 `bin/start.sh <farm|server|all>`。
 
 ### 嵌入模式（单应用启动）
 
-由 `basctl run` 完成（组件目录里是 `bin/sas.sh run`）：不读 `conf/server.xml`，把目标写成一份
+由 `basctl run` 完成（组件目录里是 `bin/bas.sh run`）：不读 `conf/server.xml`，把目标写成一份
 单应用 launch spec，再交给 `jstart` 前台运行。参数顺序无关，JVM 选项（`-Xmx`、`-D`）可放在任意位置：
 
 ```bash
-bin/sas.sh run /path/to/app.war [--port=8080] [--path=/app] [jvm_options]
-bin/sas.sh run [jvm_options] group:artifact:version [--engine=undertow] [other_args]
-bin/sas.sh run http://host.com/path/app.war [--port=8080] [other_args]
+bin/bas.sh run /path/to/app.war [--port=8080] [--path=/app] [jvm_options]
+bin/bas.sh run [jvm_options] group:artifact:version [--engine=undertow] [other_args]
+bin/bas.sh run http://host.com/path/app.war [--port=8080] [other_args]
 ```
 
-组件目录缺省 `/tmp/sas`，可用 `--base=` / `--instance=` 改变；工作目录由 `sas.sh run` 固定为
-`$SAS_HOME`（也可显式传 `--workdir=`）。引擎与容器版本内置在 `basctl` 中，可用
-`sas_engine_version` / `sas_scala_version` / `sas_commons_version` / `sas_slf4j_version` /
-`sas_logback_version` / `sas_tomcat_version` / `sas_undertow_version` /
-`sas_undertow_ee_version` 环境变量覆盖，详见 basctl 的 [docs/run.md](https://github.com/beangle/basctl/blob/develop/docs/run.md)。
+组件目录缺省 `/tmp/bas`，可用 `--base=` / `--instance=` 改变；工作目录由 `bas.sh run` 固定为
+`$BAS_HOME`（也可显式传 `--workdir=`）。引擎与容器版本内置在 `basctl` 中，可用
+`bas_engine_version` / `bas_scala_version` / `bas_commons_version` / `bas_slf4j_version` /
+`bas_logback_version` / `bas_tomcat_version` / `bas_undertow_version` /
+`bas_undertow_ee_version` 环境变量覆盖，详见 basctl 的 [docs/run.md](https://github.com/beangle/basctl/blob/develop/docs/run.md)。
 
 `--dev=true` 开启开发模式（热加载、错误页），等价于 `-Dbeangle.config.profiles=dev`。该 profile 与 beangle-commons 的
 `Environment` 共用同一个 key 与语义（逗号分隔、调试模式自动视为 dev、`-dev` 可关闭自动行为）。
@@ -62,7 +62,7 @@ bin/sas.sh run http://host.com/path/app.war [--port=8080] [other_args]
 `--Dkey=value` 设置引擎参数，等价于 JVM 的 `-Dkey=value`（同时存在时 `--D` 优先）：
 
 ```bash
-bin/sas.sh run /path/to/app.war --port=8080 --Dconnector.maxKeepAliveRequests=1000 --Dengine.backgroundProcessorDelay=30
+bin/bas.sh run /path/to/app.war --port=8080 --Dconnector.maxKeepAliveRequests=1000 --Dengine.backgroundProcessorDelay=30
 ```
 
 | key | 默认 | 说明 |
@@ -96,17 +96,17 @@ bin/sas.sh run /path/to/app.war --port=8080 --Dconnector.maxKeepAliveRequests=10
 ### 管理命令
 
 `bin/*.sh` 是薄封装：解析、生成、启停等控制面动作全部委托本机 `basctl`，运行时交给 `jstart`。
-两者默认取 `PATH` 上的同名命令，可用环境变量 `sas_basctl` / `sas_jstart` 指向本地构建产物。
+两者默认取 `PATH` 上的同名命令，可用环境变量 `bas_basctl` / `bas_jstart` 指向本地构建产物。
 
 ```bash
 bin/start.sh farm_name          # 生成 spec 并后台启动（basctl start），启动前按需刷新远端 server.xml
 bin/stop.sh all                 # 停止实例（basctl stop）
 bin/restart.sh all              # resolve 成功后 stop + start
-bin/sas.sh run app.war          # 嵌入式启动单个 webapp（basctl run）
-bin/sas.sh status               # 查看运行中的实例（basctl status）
-bin/sas.sh version              # 显示版本与本机地址（basctl version）
-bin/sas.sh resolve [farm_name|server_name|all]   # 只解析 webapp 依赖，不启动（basctl resolve）
-bin/sas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
+bin/bas.sh run app.war          # 嵌入式启动单个 webapp（basctl run）
+bin/bas.sh status               # 查看运行中的实例（basctl status）
+bin/bas.sh version              # 显示版本与本机地址（basctl version）
+bin/bas.sh resolve [farm_name|server_name|all]   # 只解析 webapp 依赖，不启动（basctl resolve）
+bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 ```
 
 需要预装 `basctl` 与 `jstart`（见各自项目）；缺失时启动/解析会明确报错。升级控制脚本 =
@@ -123,7 +123,7 @@ bin/sas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 | 元素 | 说明 |
 | --- | --- |
 | `repository` | 依赖本地/远程仓库（release），可选 `token` 访问受保护仓库 |
-| `snapshot-repo` | SNAPSHOT 仓库，支持 `${sas_remote_url}` / `${sas_remote_token}` 占位 |
+| `snapshot-repo` | SNAPSHOT 仓库，支持 `${bas_remote_url}` / `${bas_remote_token}` 占位 |
 | `engines/engine` | 引擎定义（Tomcat 10/11 / Undertow），含版本、JSP 支持、listener、jar |
 | `hosts/host` | 主机定义（name/ip） |
 | `resources/resource` | JNDI 资源，供 webapp 引用 |
@@ -133,14 +133,14 @@ bin/sas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 `<proxy>` 节点（Nginx/HAProxy 反代配置）不在当前控制面（basctl）的迁移范围内，
 会被忽略；反代请另行生成/维护。
 
-`repository` / `snapshot-repo` 的 `remote` 与 `token` 都支持环境变量占位：`${sas_remote_url}`
-解析为 `sas_remote_url`（截断到 `/api/` 之前），`token="${sas_remote_token}"` 解析为
-`sas_remote_token`。两个变量互相独立——没有 `sas_remote_token` 时只把令牌置空（受保护仓库
-会返回 401），不影响 `${sas_remote_url}` 的解析。
+`repository` / `snapshot-repo` 的 `remote` 与 `token` 都支持环境变量占位：`${bas_remote_url}`
+解析为 `bas_remote_url`（截断到 `/api/` 之前），`token="${bas_remote_token}"` 解析为
+`bas_remote_token`。两个变量互相独立——没有 `bas_remote_token` 时只把令牌置空（受保护仓库
+会返回 401），不影响 `${bas_remote_url}` 的解析。
 
 ### jstart 集成
 
-解析下载 war/jar 的工作交给本机 `jstart` 命令，sas 不再依赖 `beangle-boot` 的下载 API：
+解析下载 war/jar 的工作交给本机 `jstart` 命令，bas 不再依赖 `beangle-boot` 的下载 API：
 
 | 场景 | 使用的命令 |
 | --- | --- |
@@ -149,12 +149,12 @@ bin/sas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 | war 内依赖解析（原 `AppResolver`） | `jstart resolve <war> --local=<local> --remote=<remotes>` |
 | 嵌入式模式（`basctl run`） | `jstart run <spec>`（spec 由 basctl 生成，容器准备走 `basctl make *-embed`） |
 
-- 命令位置由环境变量 `sas_jstart` 指定，缺省取 `PATH` 上的 `jstart`；
+- 命令位置由环境变量 `bas_jstart` 指定，缺省取 `PATH` 上的 `jstart`；
 - 需在部署主机上安装 `jstart`（见 beangle/jstart 项目）；缺失时解析会失败并提示
-  `Cannot run jstart, install jstart or set sas_jstart to its path.`；
+  `Cannot run jstart, install jstart or set bas_jstart to its path.`；
 - 仓库读令牌按 jstart 的约定通过子进程环境变量 `micdn_token` 传递（对应
-  `token="${sas_remote_token}"`），构件 GET 带 `Authorization: Bearer`；
-- 镜像列表与 Maven Central 兜底由 jstart 决定，且**只作用于正式版**：sas 只透传
+  `token="${bas_remote_token}"`），构件 GET 带 `Authorization: Bearer`；
+- 镜像列表与 Maven Central 兜底由 jstart 决定，且**只作用于正式版**：bas 只透传
   `<repository remote="...">`，未配置时不传 `--remote`，由 jstart 使用内置默认
   （阿里云 → 华为云 → Central）。开发版走**独立**的 `--snapshot-remote=`（不套用这份
   兜底）：`<snapshot-repo>` 的 `remote` 原样透传为 `--snapshot-remote=`，未配置时再以
@@ -163,7 +163,7 @@ bin/sas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
   `latest` 响应头，其次取版本目录的 `maven-metadata.xml`，把时间戳文件落到本地快照库
   （默认 `~/.m2/snapshots`）并复核 `.sha1`；本地已有同一构建时跳过下载，上游不可达时
   退回本地已有文件。HEAD 保持匿名（micdn 的 `<auth download-key>` 不限制 HEAD）。
-  因此 sas 不再自己发 HTTP 请求，只是把快照仓库的 `--local`/`--snapshot-remote`/
+  因此 bas 不再自己发 HTTP 请求，只是把快照仓库的 `--local`/`--snapshot-remote`/
   `micdn_token` 透传给 jstart。
 
 ### 引擎入口（creator）

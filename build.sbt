@@ -4,13 +4,13 @@ import sbtassembly.AssemblyPlugin
 import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtassembly.{MergeStrategy, PathList}
 
-organization := "org.beangle.sas"
+organization := "org.beangle.bas"
 version := "0.14.0"
 
 scmInfo := Some(
   ScmInfo(
-    uri("https://github.com/beangle/sas"),
-    "scm:git@github.com:beangle/sas.git"
+    uri("https://github.com/beangle/bas"),
+    "scm:git@github.com:beangle/bas.git"
   )
 )
 
@@ -23,8 +23,8 @@ developers := List(
   )
 )
 
-description := "The Beangle Simple Application Server (SAS)"
-homepage := Some(uri("https://beangle.github.io/sas/index.html"))
+description := "The Beangle Bas Server (BAS)"
+homepage := Some(uri("https://beangle.github.io/bas/index.html"))
 
 val beangle_commons_ver = "6.3.7"
 val apache_tomcat_ver = "11.0.26"
@@ -45,14 +45,14 @@ lazy val root = (project in file("."))
 
 lazy val engine = (project in file("engine"))
   .settings(
-    name := "beangle-sas-engine",
+    name := "beangle-bas-engine",
     common,
     libraryDependencies ++= Seq(tomcat_embeded_core, undertow_core, undertow_servlet)
   )
 
 lazy val juli = (project in file("juli"))
   .settings(
-    name := "beangle-sas-juli",
+    name := "beangle-bas-juli",
     common,
     exportJars := false,
     libraryDependencies ++= Seq(slf4j, jcl_over_slf4j, logback_core, logback_classic, tomcat_juli),
@@ -67,8 +67,8 @@ lazy val juli = (project in file("juli"))
       ShadeRule.zap("org.apache.juli.**Handler**").inAll,
       ShadeRule.zap("org.apache.juli.**Format**").inAll,
       ShadeRule.rename("org.apache.commons.logging.**" -> "org.apache.juli.logging.@1").inAll,
-      ShadeRule.rename("org.slf4j.**" -> "org.beangle.sas.slf4j.@1").inAll,
-      ShadeRule.rename("ch.qos.logback.**" -> "org.beangle.sas.logback.@1").inAll,
+      ShadeRule.rename("org.slf4j.**" -> "org.beangle.bas.slf4j.@1").inAll,
+      ShadeRule.rename("ch.qos.logback.**" -> "org.beangle.bas.logback.@1").inAll,
       ShadeRule.rename("logback.ContextSelector" -> "juli.logback.ContextSelector").inAll,
     ),
     assemblyMergeStrategy := {
@@ -88,6 +88,6 @@ lazy val juli = (project in file("juli"))
       case PathList("module-info.class") => MergeStrategy.discard
       case _ => MergeStrategy.first
     },
-    assemblyJarName := "beangle-sas-juli-" + version.value + ".jar",
+    assemblyJarName := "beangle-bas-juli-" + version.value + ".jar",
     Compile / packageBin := Def.uncached(assembly).value
   )

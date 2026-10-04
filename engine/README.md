@@ -1,4 +1,4 @@
-Beangle SAS Engine
+Beangle Bas Engine
 
-Sas Engine是个纯Java编写的Web服务器的增强库，是在应用服务器运行时依赖的一部分。
+Bas Engine是个纯Java编写的Web服务器的增强库，是在应用服务器运行时依赖的一部分。
 因此没有Beangle库和Scala方面的依赖，仅仅依赖应用服务器的部分库。考虑到使用场景，避免将该库依赖其他第三方包。

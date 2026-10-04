@@ -5,63 +5,18 @@
 ## [0.14.0] - 未发布
 
 ### Added
-- `Server.Config` / `CmdOptions` 新增显式 `--docBase=`：供外部 creator（如 basctl 的
-  `make <type>` 入口）指定已解压好的 webapp 目录，跳过 `guessDocBase` 的 IDE/默认路径探测
-- 新增环境变量 `sas_basctl` / `sas_jstart` 指定 `basctl` / `jstart` 命令位置
-  （缺省取 `PATH` 上的同名命令）
+- `CmdOptions` 支持 `--docBase=`（`Server.Config.setDocBase`）：由外部 creator 指定已解压的 webapp 目录，未指定时仍走 `guessDocBase`
 
 ### Changed
-- 容器内 `DependencyClassLoader` 的本地仓库支持 `-Dsas.repo`（jstart 按 `--local` 透传）：
-  SNAPSHOT 同时识别「快照与正式版同库（jstart 显式 `--local`）」「`<repo>/../snapshots`」
-  与「`<sas.home>/webapps` 平铺」三种布局，存在者中取最新
-- 构件解析/下载从 `beangle-boot` 的库 API 改由本机 `jstart` 命令完成：正式版 war、引擎构件、
-  扩展 libs 走 `jstart fetch`，war 内依赖解析（原 `AppResolver`）走 `jstart resolve`，
-  嵌入式模式（现 `basctl run`）的解析与启动也全部交给 jstart
-- 开发版（SNAPSHOT）也交给 `jstart fetch`：别名 → 最新时间戳构建的解析（上游 `latest`
-  响应头，其次 `maven-metadata.xml`）与落盘、`.sha1` 复核均移到 jstart，sas 不再自己发
-  HTTP 请求
-- `conf/server.xml` 根元素由 `<sas>` 改为 `<bas>`，元素与属性一律小写连字符（如
-  `<snapshot-repo>`、`max-heap-size`、`run-at`、`resolve-support`）；格式由 basctl 的
-  `resources/bas-1.0.0.xsd` 定义，发布副本 <http://beangle.github.io/schema/bas-1.0.0.xsd>
-- 镜像列表与 Maven Central 兜底只在 jstart 里维护一份，且只作用于正式版：sas 原样透传
-  `<repository remote>`，未配置时交给 jstart 的内置默认；开发版不套用兜底，`<snapshot-repo>`
-  未配置上游时以 `--offline` 调 jstart，落实"不代理、只用本地构件"的语义（此前会因
-  省略 `--remote` 而回落到内置镜像）
-- 不再依赖 `beangle-boot`：构建与 `env.sh` 均移除该构件
-- 仓库读令牌按 jstart 约定通过子进程环境变量 `micdn_token` 传递（值来自
-  `token="${sas_remote_token}"`），构件 GET 带 `Authorization: Bearer`
-- `bin/*.sh` 全面改为薄封装：解析、生成、启停等控制面动作全部委托本机 `basctl`，
-  依赖解析与进程启动委托 `jstart`，脚本不再自己拼 classpath 或调度进程
-- `bin/start.sh` 先按 `sas_remote_url` / `sas_remote_connect` 刷新 `conf/server.xml`，
-  再 `exec "$sas_basctl" start <conf> <farm|server|all>`；`sas.sh start` 转发到它
-- `bin/stop.sh` / `sas.sh stop` 改用 `basctl stop`（逐个 `jstart stop` 对应 spec，
-  透传 `--force` / `--timeout=<sec>`）；`bin/restart.sh` 先 `basctl resolve`（失败即中止）
-  再 stop + start
-- 控制脚本（`bin/*.sh`）改由 `basctl` 内嵌并按 `basctl init` 铺设，随 basctl 版本发布：
-  升级 basctl 后执行 `basctl init --force <dir>` 即可刷新脚本，不再有独立的版本化发行包
-- `bin/sas.sh version|status|resolve|pull` 转发到 `basctl` 同名子命令，`start` / `stop` /
-  `restart` / `run` 走各自脚本；`make` / `firewall` / `update` 不再经 `sas.sh` 暴露，
-  需要时直接调用 `basctl make` / `basctl firewall`；basctl 的容器入口子命令统一为
-  `make <type>`（原 `container` 名称取消，未发布前的重命名）
-- 嵌入式启动（原 `bin/launch.sh`）并入 `basctl run`：basctl 生成单应用 launch spec
-  （`[engine] init = basctl make <tomcat|undertow>-embed`，引擎/容器版本内置在
-  basctl 中），再前台 `jstart run`；`sas.sh run` 转发到它（工作目录固定为 `$SAS_HOME`）
-- 修正 `beangle-sas-juli` 打包：assembly 显式 `discard` 随包生成的
-  `META-INF/beangle/dependencies`，避免它被 webapp 的 `DependencyClassLoader`
-  误当成引擎依赖清单读取
-- `env.sh` 精简为控制命令位置与仓库地址：嵌入式版本改由 basctl 内置（可用
-  `sas_*_version` 覆盖），删除 `beangle_boot_ver` / `scala_ver` 等构件版本
+- `DependencyClassLoader` 本地仓库支持 `-Dbas.repo`（jstart 以 `--local` 透传）；`Dependency.findLatest` 适配平铺（`<bas.home>/webapps`）、同库（`--local`）与 `<repo>/../snapshots` 三种 SNAPSHOT 布局，按修改时间取最新
+- `beangle-bas-juli` assembly 丢弃随包生成的 `META-INF/beangle/dependencies`，避免被 webapp 的 `DependencyClassLoader` 误当引擎依赖清单
+- 构建移除 `beangle-boot` / `beangle-template` 依赖；Undertow 升级 2.4.4.Final（servlet 2.0.3.Final）、jcl-over-slf4j 2.0.20
+- README 重写，明确控制面（`basctl`）与运行时（`jstart`）分离
 
 ### Removed
-- 删除 `server` 模块与 `beangle-sas` 发行包 zip：安装脚本改由 `basctl init` 铺设
-- 移除 `sas.sh update`（发行包不再存在；刷新脚本用新版 `basctl init --force <dir>`）；
-  删除 `netinstall.sh`（安装改由 `basctl init` 完成）
-- 移除对 `org.beangle.boot`（Artifact/Repos/ArtifactDownloader/AppResolver/Classpath）的直接依赖
-- 删除 `core` 模块（`beangle-sas-core`）：配置模型、部署生成器与模板已全部迁入
-  `basctl`（proxy / aes 按要求不迁移）；该 artifact 不再发布新版本
-- 删除 `bin/init.sh`：运行时构件改由 `basctl`/`jstart` 按需解析，不再启动期下载到 `bin/lib`
-- 删除 `bin/launch.sh`：嵌入式启动能力并入 `basctl run`（`sas.sh run` 转发）
-- 移除 `sas.sh` 的 `aes` 与 `proxy` 子命令（控制面不再暴露）
+- 删除 `core` 模块（`beangle-bas-core`）：配置模型、部署生成器与模板改由 `basctl` 维护
+- 删除 `server` 模块（`beangle-bas` 发行包 zip）与 `netinstall.sh`：`bin/*.sh` 控制脚本改由 `basctl` 内嵌并按 `basctl init` 铺设
+- 移除对 `org.beangle.boot` 的直接依赖
 
 ## [0.13.13] - 2026-09-18
 
@@ -92,7 +47,7 @@
 ## [0.13.12] - 2026-09-06
 
 ### Added
-- 补充 GraalVM native-image 反射与资源注册配置（`reflect-config.json`、`resource-config.json`），覆盖 Tomcat 内部类与 SAS 引擎
+- 补充 GraalVM native-image 反射与资源注册配置（`reflect-config.json`、`resource-config.json`），覆盖 Tomcat 内部类与 Bas 引擎
 
 ### Changed
 - Tomcat 升级到 11.0.25，Undertow 2.4.3.Final / undertow-servlet 2.0.2.Final，logback 1.6.3，freemarker 2.3.35
@@ -207,7 +162,7 @@
 ### Added
 - 支持从仓库下载 SNAPSHOT
 - 支持解析最新 SNAPSHOT 版本
-- 支持解析 `sas_remote_url` 占位
+- 支持解析 `bas_remote_url` 占位
 
 ### Changed
 - 升级 boot 0.1.17

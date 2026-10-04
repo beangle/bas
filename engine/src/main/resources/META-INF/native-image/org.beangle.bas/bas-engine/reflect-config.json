@@ -1,0 +1,221 @@
+[
+  {
+    "name": "org.beangle.bas.engine.tomcat.Bootstrap",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.beangle.bas.engine.tomcat.TomcatServerBuilder",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.beangle.bas.engine.tomcat.TomcatServer",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.beangle.bas.engine.tomcat.EmbeddedClassLoader",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.beangle.bas.engine.tomcat.DependencyClassLoader",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.beangle.bas.engine.tomcat.SwallowErrorValve",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.beangle.bas.engine.tomcat.ExtendableWebappLoader",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.beangle.bas.engine.tomcat.TomcatServerBuilder$FixContextListener",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.startup.Tomcat",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardServer",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardEngine",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardHost",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardContext",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.connector.Connector",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.coyote.http11.Http11NioProtocol",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.startup.Constants",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.apache.catalina.Lifecycle",
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.catalina.valves.ErrorReportValve",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "java.lang.Thread",
+    "methods": [
+      {
+        "name": "ofVirtual",
+        "parameterTypes": []
+      },
+      {
+        "name": "name",
+        "parameterTypes": [
+          "java.lang.String",
+          "int"
+        ]
+      },
+      {
+        "name": "factory",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.Registry",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.modules.MbeansDescriptorsIntrospectionSource",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.modules.MbeansDescriptorsDigesterSource",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.modules.ModelerSource",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.ManagedBean",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.BaseModelMBean",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.AttributeInfo",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.OperationInfo",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.NotificationInfo",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.tomcat.util.modeler.ParameterInfo",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.apache.catalina.mbeans.MBeanFactory",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.util.LifecycleMBeanBase",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardService",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardPipeline",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardWrapper",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.core.StandardRealm",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.authenticator.AuthenticatorBase",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.apache.catalina.core.NamingResourcesImpl",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.mapper.MapperListener",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.coyote.AbstractProtocol",
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.apache.catalina.startup.HostConfig",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.apache.catalina.servlets.DefaultServlet",
+    "allPublicConstructors": true,
+    "allPublicMethods": true
+  }
+]
