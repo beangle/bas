@@ -76,11 +76,14 @@ public class TomcatServerBuilder {
     connector.setURIEncoding("UTF-8"); //设置编码
     connector.setXpoweredBy(false);
     connector.setProperty("bindOnInit", "false");
+    // 对齐 <http enable-lookups> / <http disable-upload-timeout>，缺省与 Tomcat 一致（关闭 DNS 反查、禁用上传超时）
+    config.getBoolean("connector.enableLookups").ifPresent(connector::setEnableLookups);
 
     org.apache.coyote.http11.Http11NioProtocol protocol =
       (org.apache.coyote.http11.Http11NioProtocol) connector.getProtocolHandler();
 
     protocol.setSSLEnabled(false);
+    config.getBoolean("connector.disableUploadTimeout").ifPresent(protocol::setDisableUploadTimeout);
     if (config.devMode) {
       protocol.setTcpNoDelay(true);// 禁用 TCP 延迟（Nagle 算法），提升实时性
     }

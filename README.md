@@ -1,11 +1,11 @@
 # Beangle Bas Server
 
-简化和便捷 war 包发布、加强管理的定制应用服务器，基于 Tomcat 与 Undertow 构建。
+简化和便捷 war 包发布、加强管理的定制应用服务器，基于 Tomcat、Undertow 与 Jetty 构建。
 
 ## 特性
 
 - **多实例管理**：一套安装目录下，通过配置文件管理多个 JVM/应用实例（Farm / Server），支持一键启停、状态查看
-- **双引擎支持**：Tomcat 10 / 11（11 默认虚拟线程，JDK 21+）与 Undertow 2.4，按实例选择
+- **多引擎支持**：Tomcat 10 / 11（11 默认虚拟线程，JDK 21+）、Undertow 2.4 与 Jetty 12（ee10），按实例选择
 - **嵌入模式**：`basctl run`（组件目录里是 `bas.sh run`）直接启动单个 war / Maven 坐标 / 远端 URL，参数顺序无关，无需手工配置
 - **控制面 / 运行时分离**：`bin/*.sh` 只做薄封装，容器编排交给 [`basctl`](https://github.com/beangle/basctl)，依赖解析与启动交给 [`jstart`](https://github.com/beangle/jstart)
 - **依赖自动解析**：通过本机 `jstart` 命令解析并下载 war 及其依赖，bas 只负责编排与生成
@@ -18,7 +18,7 @@
 
 ```
 beangle-bas
-├── engine   # Tomcat / Undertow 嵌入式运行时
+├── engine   # Tomcat / Undertow / Jetty 嵌入式运行时
 └── juli     # Tomcat juli → SLF4J/Logback 日志桥接（shaded 独立 jar）
 ```
 
@@ -45,6 +45,7 @@ basctl init --force /opt/bas  # 升级 basctl 后刷新脚本
 ```bash
 bin/bas.sh run /path/to/app.war [--port=8080] [--path=/app] [jvm_options]
 bin/bas.sh run [jvm_options] group:artifact:version [--engine=undertow] [other_args]
+bin/bas.sh run /path/to/app.war --engine=jetty-12.0.30 [other_args]
 bin/bas.sh run http://host.com/path/app.war [--port=8080] [other_args]
 ```
 
@@ -69,7 +70,7 @@ bin/bas.sh run /path/to/app.war --port=8080 --Dconnector.maxKeepAliveRequests=10
 | --- | --- | --- |
 | `connector.maxConnections` | 10000 | 最大连接数 |
 | `connector.acceptCount` | 1000 | 等待队列长度 |
-| `connector.connectionTimeout` | 20000 | 建连/读超时（ms） |
+| `connector.connectionTimeout` | 60000 | 建连/读超时（ms） |
 | `connector.keepAliveTimeout` | 同 connectionTimeout | keep-alive 空闲超时（ms） |
 | `connector.maxKeepAliveRequests` | 100 | 单个 keep-alive 连接的最大请求数。实测 10 万请求：默认 100 会重建 1000 次连接，提到 10000 后为 0 次，直连吞吐 +2~5%；前面挂 nginx（upstream keepalive）时实测无差异 |
 | `connector.processorCache` | 200 | 空闲 Processor 池上限，`-1` 表示不限。实测并发 ≤1000 的稳定长连接负载下与 2000 无差异（池只在空闲数超过上限时丢弃） |
@@ -78,10 +79,23 @@ bin/bas.sh run /path/to/app.war --port=8080 --Dconnector.maxKeepAliveRequests=10
 | `server.defaultServletSupport` | false | 是否注册容器的默认 servlet（war 根下的静态文件与 welcome file）。默认关：`/index.html`、`/` 等直接 404，静态资源交给前端代理或应用自身（webmvc 的 `/static/**` 不受影响）；需要时用 `--Dserver.defaultServletSupport=true` 打开 |
 | `buffer-size`、`io-thread`、`worker-threads`、`direct-buffers` | Undertow 默认 | 仅 `--engine=undertow` 生效 |
 
-嵌入式模式不支持 JSP 与 access log；会话只保留 Cookie 跟踪，不会出现 `;jsessionid` 形式的 URL 重写。
-会话仍由 `StandardManager` 管理，但会话 id 生成器不在启动时预热 SecureRandom（Tomcat 默认会预热，实测
-25~35ms，低熵环境或旧 JDK 上可能到秒级），这份开销推迟到第一次真正创建会话时（一次性）；SecureRandom
-算法交给平台默认（Linux/macOS 为 NativePRNG，其余平台由 JDK 选择），不再固定 Tomcat 的 SHA1PRNG。
+上表中的 `connector.acceptCount`、`connector.connectionTimeout` / `connector.keepAliveTimeout`
+是各引擎共通的连接调优（Jetty → `acceptQueueSize` / 连接空闲超时，Undertow → `Options.BACKLOG` /
+`UndertowOptions.NO_REQUEST_TIMEOUT`，Undertow 用单一超时同时覆盖首请求与 keep-alive 空闲）；
+`connector.maxConnections` 只有 Tomcat / Jetty 有对应物，Undertow 不限制连接数，配置后忽略。
+其余 `connector.*`（`maxKeepAliveRequests`、`processorCache`、`appReadBufSize` 等）仅 Tomcat 生效，
+`buffer-size` / `io-thread` / `worker-threads` / `direct-buffers` 仅 Undertow 生效。
+`connector.enableLookups` / `connector.disableUploadTimeout` 也仅 Tomcat 生效（对应 `<http>` 的
+`enable-lookups` / `disable-upload-timeout`），Jetty / Undertow 无对应开关。
+
+嵌入式模式不支持 JSP 与 access log；会话只保留 Cookie 跟踪（`HttpOnly`），不会出现 `;jsessionid` 形式的 URL 重写。
+错误页与 Tomcat 的 `SwallowErrorValve` 对齐：生产模式只返回状态与消息、不返回调用栈，dev 模式下保留完整栈；
+Undertow 侧固定 `ServletStackTraces.NONE`（不区分 dev/prod）。
+注意 Undertow 不解析 `web.xml`（其 `undertow-servlet` 不含 web.xml 解析器）：靠 `web.xml` 声明
+servlet/filter/listener 的第三方 war 在 `--engine=undertow` 下不生效，需改用注解或 SCI；Tomcat / Jetty 正常。
+Tomcat 下会话仍由 `StandardManager` 管理，但会话 id 生成器不在启动时预热 SecureRandom（Tomcat 默认会预热，
+实测 25~35ms，低熵环境或旧 JDK 上可能到秒级），这份开销推迟到第一次真正创建会话时（一次性）；
+SecureRandom 算法交给平台默认（Linux/macOS 为 NativePRNG，其余平台由 JDK 选择），不再固定 Tomcat 的 SHA1PRNG。
 
 ### 多实例模式
 
@@ -91,7 +105,7 @@ bin/bas.sh run /path/to/app.war --port=8080 --Dconnector.maxKeepAliveRequests=10
 
 实例上的应用全部启动失败时（只部署一个就是它起不来，部署多个就是都没起来），进程会打印错误并退出以释放端口，
 修好问题后直接 `bin/start.sh server_name` 即可；只要还剩一个应用可用就只报错，不影响同机其他应用。
-嵌入式模式（`basctl run`）行为一致：Tomcat 起不来会以非 0 退出并释放端口，Undertow 在绑定端口前就会失败。
+嵌入式模式（`basctl run`）行为一致：Tomcat / Jetty 起不来会以非 0 退出并释放端口，Undertow 在绑定端口前就会失败。
 
 ### 管理命令
 
@@ -124,7 +138,7 @@ bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 | --- | --- |
 | `repository` | 依赖本地/远程仓库（release），可选 `token` 访问受保护仓库 |
 | `snapshot-repo` | SNAPSHOT 仓库，支持 `${bas_remote_url}` / `${bas_remote_token}` 占位 |
-| `engines/engine` | 引擎定义（Tomcat 10/11 / Undertow），含版本、JSP 支持、listener、jar |
+| `engines/engine` | 引擎定义（Tomcat 10/11 / Undertow / Jetty 12），含版本、JSP 支持、listener、jar |
 | `hosts/host` | 主机定义（name/ip） |
 | `resources/resource` | JNDI 资源，供 webapp 引用 |
 | `farms/farm` | 实例组：堆大小（`max-heap-size`）、HTTP Connector、server 列表 |
@@ -170,9 +184,10 @@ bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 
 war 的引擎入口（jstart `[engine] init` 协议：准备容器环境、写出最终启动 argv）由
 [`basctl`](https://github.com/beangle/basctl) 提供（`basctl make tomcat` /
-`basctl make undertow` / `basctl make tomcat-server`）。`engine` 模块只保留
-容器运行时类（`tomcat.Bootstrap` / `undertow.Bootstrap`、`DependencyClassLoader`、
-`ExtendableWebappLoader`、`WebappFailFastListener` 等），不再内置 creator main。
+`basctl make undertow` / `basctl make jetty` / `basctl make tomcat-server`）。`engine` 模块只保留
+容器运行时类（`tomcat.Bootstrap` / `undertow.Bootstrap` / `jetty.Bootstrap`、
+`DependencyClassLoader`、`ExtendableWebappLoader`、`WebappFailFastListener` 等），
+不再内置 creator main。
 
 ## 构建
 

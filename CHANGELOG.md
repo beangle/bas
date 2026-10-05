@@ -6,6 +6,12 @@
 
 ### Added
 - `CmdOptions` 支持 `--docBase=`，由外部 creator 指定已解压的 webapp 目录（未指定时仍走 `guessDocBase`）
+- 新增 Jetty 12（ee10，Servlet 6）嵌入式引擎：`org.beangle.bas.engine.jetty.Bootstrap`（`basctl make jetty`）；错误页对齐
+  Tomcat 的 `SwallowErrorValve`（生产模式不返回调用栈，dev 模式保留完整栈）
+- Undertow 会话只保留 Cookie 跟踪且下发 `HttpOnly`（URL 不再出现 `;jsessionid`），并支持
+  `connector.acceptCount` / `connector.connectionTimeout` / `connector.keepAliveTimeout` 映射
+- Tomcat 支持 `connector.enableLookups` / `connector.disableUploadTimeout`（对应 server.xml `<http>` 的
+  `enable-lookups` / `disable-upload-timeout`）
 
 ### Changed
 - 项目与构件由 sas 更名为 bas：`org.beangle.sas` → `org.beangle.bas`，`beangle-sas-engine` / `beangle-sas-juli` → `beangle-bas-engine` / `beangle-bas-juli`，包名 `org.beangle.sas.*` → `org.beangle.bas.*`

@@ -31,12 +31,16 @@ val beangle_commons_ver = "6.3.7"
 val apache_tomcat_ver = "11.0.26"
 val io_undertow_ver = "2.4.4.Final"
 val undertow_ee_ver = "2.0.3.Final"
+val jetty_ver = "12.0.30"
 
 val beangle_commons = "org.beangle.commons" % "beangle-commons" % beangle_commons_ver
 val tomcat_juli = "org.apache.tomcat" % "tomcat-juli" % apache_tomcat_ver
 val undertow_core = "io.undertow" % "undertow-core" % io_undertow_ver % "optional"
 val undertow_servlet = "io.undertow.ee" % "undertow-servlet" % undertow_ee_ver % "optional"
 val tomcat_embeded_core = ("org.apache.tomcat.embed" % "tomcat-embed-core" % apache_tomcat_ver % "optional").exclude("org.apache.tomcat", "tomcat-annotations-api")
+// jetty-ee10 = Servlet 6/Jakarta；annotations 提供 SCI 与注解扫描（Configuration 由它注册）
+val jetty_webapp = "org.eclipse.jetty.ee10" % "jetty-ee10-webapp" % jetty_ver % "optional"
+val jetty_annotations = "org.eclipse.jetty.ee10" % "jetty-ee10-annotations" % jetty_ver % "optional"
 val commonDeps = Seq(beangle_commons, scalatest)
 val jcl_over_slf4j = "org.slf4j" % "jcl-over-slf4j" % "2.0.20"
 
@@ -51,7 +55,7 @@ lazy val engine = (project in file("engine"))
   .settings(
     name := "beangle-bas-engine",
     common,
-    libraryDependencies ++= Seq(tomcat_embeded_core, undertow_core, undertow_servlet)
+    libraryDependencies ++= Seq(tomcat_embeded_core, undertow_core, undertow_servlet, jetty_webapp, jetty_annotations)
   )
 
 lazy val juli = (project in file("juli"))

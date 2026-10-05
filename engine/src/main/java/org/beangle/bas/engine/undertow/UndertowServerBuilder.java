@@ -26,16 +26,20 @@ import io.undertow.servlet.Servlets;
 import io.undertow.servlet.api.DeploymentInfo;
 import io.undertow.servlet.api.ServletContainer;
 import io.undertow.servlet.api.ServletContainerInitializerInfo;
+import io.undertow.servlet.api.ServletSessionConfig;
 import io.undertow.servlet.api.ServletStackTraces;
 import io.undertow.servlet.handlers.DefaultServlet;
 import jakarta.servlet.ServletContainerInitializer;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.SessionTrackingMode;
 import org.beangle.bas.engine.Server;
+import org.xnio.Options;
 
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.Set;
 
 public class UndertowServerBuilder {
   private final Server.Config config;
@@ -51,6 +55,12 @@ public class UndertowServerBuilder {
     config.getInt("io-thread").ifPresent(builder::setIoThreads);
     config.getInt("worker-threads").ifPresent(builder::setWorkerThreads);
     config.getBoolean("direct-buffers").ifPresent(builder::setDirectBuffers);
+    // 对齐 tomcat 的 connector.acceptCount：accept 队列长度（Undertow 默认 1000）
+    config.getInt("connector.acceptCount").ifPresent(count -> builder.setSocketOption(Options.BACKLOG, count));
+    // 对齐 tomcat 的 connector.connectionTimeout：Undertow 用单一 NO_REQUEST_TIMEOUT 覆盖首请求与 keep-alive 空闲
+    var noRequestTimeout = config.getInt("connector.connectionTimeout");
+    if (noRequestTimeout.isEmpty()) noRequestTimeout = config.getInt("connector.keepAliveTimeout");
+    noRequestTimeout.ifPresent(timeout -> builder.setServerOption(UndertowOptions.NO_REQUEST_TIMEOUT, timeout));
 
     builder.addHttpListener(config.port, null);
     builder.setServerOption(UndertowOptions.SHUTDOWN_TIMEOUT, 0);
@@ -58,6 +68,10 @@ public class UndertowServerBuilder {
     ServletContainer sc = Servlets.newContainer();
     builder.setHandler(createDeployments(sc));
     return builder.build();
+  }
+
+  /** 定制 deployment：嵌入方可在此追加 servlet、listener 或 initializer */
+  protected void customize(DeploymentInfo deployment) {
   }
 
   private ClassLoader getServletClassLoader() {
@@ -101,7 +115,12 @@ public class UndertowServerBuilder {
     di.setTempDir(new File(config.base + File.separator + "temp"));
 
     di.setResourceManager(new FileResourceManager(new File(config.docBase), 1024));
+    // 只保留 Cookie 会话跟踪，避免 ;jsessionid 出现在 URL/Referer/日志中；Undertow 默认不下发 HttpOnly（tomcat/jetty 默认下发）
+    di.setServletSessionConfig(new ServletSessionConfig()
+      .setHttpOnly(true)
+      .setSessionTrackingModes(Set.of(SessionTrackingMode.COOKIE)));
     //ignore mimetype registration
+    customize(di);
     var manager = sc.addDeployment(di);
     manager.deploy();
     var sm = manager.getDeployment().getSessionManager();
