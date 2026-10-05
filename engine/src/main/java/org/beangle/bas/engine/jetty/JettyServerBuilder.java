@@ -20,7 +20,12 @@ package org.beangle.bas.engine.jetty;
 import jakarta.servlet.SessionTrackingMode;
 import org.beangle.bas.engine.Server;
 import org.eclipse.jetty.ee10.annotations.AnnotationConfiguration;
+import org.eclipse.jetty.ee10.servlet.DefaultServlet;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.webapp.FragmentConfiguration;
+import org.eclipse.jetty.ee10.webapp.MetaInfConfiguration;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
+import org.eclipse.jetty.ee10.webapp.WebXmlConfiguration;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.ServerConnector;
@@ -107,6 +112,10 @@ public class JettyServerBuilder {
     wac.setBaseResource(ResourceFactory.of(wac).newResource(Path.of(config.docBase)));
     // 应用依赖已由 basctl 放进 -cp，父加载器优先，等价于 tomcat 的 loader.setDelegate(true)
     wac.setParentLoaderPriority(true);
+    // 换掉 Jetty 默认的 webapp 类加载器：它会把 WEB-INF/classes、WEB-INF/lib 也当成自己的资源根，
+    // 同一个目录于是能从父加载器与 webapp 两侧各枚举一次，classpath*: 配置（如 beangle.xml）被合并两遍。
+    // 这里与 tomcat 一致：父加载器取 TCCL（basctl 的 -cp），webapp 侧不提供资源。
+    wac.setClassLoader(new EmbeddedClassLoader(Thread.currentThread().getContextClassLoader(), wac));
     // webapp 起不来时直接抛，等价于 tomcat 的 WebappFailFastListener
     wac.setThrowUnavailableOnStartupException(true);
     wac.setTempDirectory(tempDir());
@@ -117,12 +126,16 @@ public class JettyServerBuilder {
     // 只保留 Cookie 会话跟踪，避免 ;jsessionid 出现在 URL/Referer/日志中
     sessions.setSessionTrackingModes(Set.of(SessionTrackingMode.COOKIE));
 
+    // 与 tomcat/undertow 对齐：嵌入式引擎不解析 web.xml / web-fragment.xml，也不加载容器的
+    // 默认描述符(webdefault-ee10.xml)；应用初始化统一走 SCI(beangle.xml)，完整的 web.xml 语义
+    // 交给 server.xml 的 tomcat-server 模式。默认 servlet 因此不再来自描述符，见下方显式注册。
+    wac.getConfigurations().remove(WebXmlConfiguration.class, FragmentConfiguration.class, MetaInfConfiguration.class);
     // 屏蔽 tomcat/jasper 的 SCI；Jetty 自身的 SCI（如 websocket）不能屏蔽
     wac.setAttribute(AnnotationConfiguration.SERVLET_CONTAINER_INITIALIZER_EXCLUSION_PATTERN,
       "org\\.apache\\.tomcat\\..*|org\\.apache\\.jasper\\..*");
-    if (!config.defaultServletSupport) {
-      // 关掉默认描述符即不注册 DefaultServlet（webdefault-ee10.xml 默认挂在 "/"）
-      wac.setDefaultsDescriptor(null);
+    if (config.defaultServletSupport) {
+      // 等价于 tomcat 的 addDefaults：war 根下的静态文件与 welcome file 由默认 servlet 提供
+      wac.addServlet(new ServletHolder("default", new DefaultServlet()), "/");
     }
     return wac;
   }

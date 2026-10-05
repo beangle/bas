@@ -91,8 +91,13 @@ bin/bas.sh run /path/to/app.war --port=8080 --Dconnector.maxKeepAliveRequests=10
 嵌入式模式不支持 JSP 与 access log；会话只保留 Cookie 跟踪（`HttpOnly`），不会出现 `;jsessionid` 形式的 URL 重写。
 错误页与 Tomcat 的 `SwallowErrorValve` 对齐：生产模式只返回状态与消息、不返回调用栈，dev 模式下保留完整栈；
 Undertow 侧固定 `ServletStackTraces.NONE`（不区分 dev/prod）。
-注意 Undertow 不解析 `web.xml`（其 `undertow-servlet` 不含 web.xml 解析器）：靠 `web.xml` 声明
-servlet/filter/listener 的第三方 war 在 `--engine=undertow` 下不生效，需改用注解或 SCI；Tomcat / Jetty 正常。
+三个嵌入式引擎（`--engine=tomcat|undertow|jetty`）都不解析 `web.xml` / `web-fragment.xml`，也不加载容器的
+默认描述符（`webdefault-ee10.xml`）：应用初始化统一走 SCI（beangle-web 的 `BootstrapInitializer` 读 `beangle.xml`
+里的 `<initializer>`），默认 servlet（`server.defaultServletSupport`）由引擎显式注册。因此靠 `web.xml` 声明
+servlet/filter/listener/context-param/error-page 的 war 在嵌入式下不生效，需要完整语义请用 `server.xml` 的多实例模式。
+应用类与依赖由 `basctl` 统一放进 JVM `-cp`（webapp 类加载器父优先），webapp 类加载器不再把
+`WEB-INF/classes` / `WEB-INF/lib` 当成自己的资源根（三个引擎一致，与 Tomcat 的 `EmbeddedClassLoader` 对齐），
+同一个 `beangle.xml` 不会因两侧各枚举一次而被重复合并；类加载不受影响，`WEB-INF/classes` 里的类照常加载。
 Tomcat 下会话仍由 `StandardManager` 管理，但会话 id 生成器不在启动时预热 SecureRandom（Tomcat 默认会预热，
 实测 25~35ms，低熵环境或旧 JDK 上可能到秒级），这份开销推迟到第一次真正创建会话时（一次性）；
 SecureRandom 算法交给平台默认（Linux/macOS 为 NativePRNG，其余平台由 JDK 选择），不再固定 Tomcat 的 SHA1PRNG。
@@ -118,7 +123,7 @@ bin/stop.sh all                 # 停止实例（basctl stop）
 bin/restart.sh all              # resolve 成功后 stop + start
 bin/bas.sh run app.war          # 嵌入式启动单个 webapp（basctl run）
 bin/bas.sh status               # 查看运行中的实例（basctl status）
-bin/bas.sh version              # 显示版本与本机地址（basctl version）
+bin/bas.sh version              # 显示 logo（纯 ASCII）、版本与本机地址（basctl banner）
 bin/bas.sh resolve [farm_name|server_name|all]   # 只解析 webapp 依赖，不启动（basctl resolve）
 bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 ```

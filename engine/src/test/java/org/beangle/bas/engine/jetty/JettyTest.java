@@ -21,6 +21,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.beangle.bas.engine.Server;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
+import org.eclipse.jetty.ee10.webapp.WebAppContext;
 import org.eclipse.jetty.server.ServerConnector;
 
 import java.io.IOException;
@@ -29,31 +31,49 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 /**
  * Jetty 嵌入式容器冒烟用例：根 context 映射（bas 的 "" → Jetty 的 "/"）、
- * web.xml 里的 servlet 可访问、`defaultServletSupport` 开/关时静态文件的行为。
+ * 嵌入式引擎不解析 web.xml、程序化注册的 servlet 可访问、`defaultServletSupport` 开/关时静态文件的行为。
  */
 public class JettyTest {
 
   public static void main(String[] args) throws Exception {
     testRootContext();
+    testProgrammaticServlet();
     testDefaultServlet();
     System.out.println("JettyTest passed");
   }
 
-  /** 根 context（"" → "/"）：web.xml 的 servlet 可访问，静态文件默认关闭直接 404。 */
+  /** 根 context（"" → "/"）：web.xml 声明的 servlet 不生效，静态文件默认关闭直接 404。 */
   private static void testRootContext() throws Exception {
     var base = Files.createTempDirectory("jetty-base");
     var docBase = base.resolve("webapps/ROOT");
     Files.createDirectories(docBase.resolve("WEB-INF/classes"));
+    // 放一份完整的 web.xml：嵌入式引擎刻意不读它（与 tomcat/undertow 对齐）
     Files.writeString(docBase.resolve("WEB-INF/web.xml"), helloWebXml());
     Files.writeString(docBase.resolve("index.html"), "<html>index</html>");
 
-    withServer(base, docBase, false, url -> {
-      assertEquals("hello", get(url + "/hello"));
+    withServer(base, docBase, false, wac -> {
+    }, url -> {
+      assertEquals(404, status(url + "/hello"));
       // 默认 servlet 关闭：静态文件直接 404
       assertEquals(404, status(url + "/index.html"));
+    });
+  }
+
+  /** 程序化注册的 servlet（等价于 SCI 读 beangle.xml 的路径）可访问；生产模式错误页不返回调用栈。 */
+  private static void testProgrammaticServlet() throws Exception {
+    var base = Files.createTempDirectory("jetty-base");
+    var docBase = base.resolve("webapps/ROOT");
+    Files.createDirectories(docBase);
+
+    withServer(base, docBase, false, wac -> {
+      wac.addServlet(new ServletHolder("hello", new HelloServlet()), "/hello");
+      wac.addServlet(new ServletHolder("error", new ErrServlet()), "/error");
+    }, url -> {
+      assertEquals("hello", get(url + "/hello"));
       // 生产模式错误页不返回调用栈（对齐 tomcat 的 SwallowErrorValve）
       var error = raw(url + "/error");
       assertEquals(500, error.status);
@@ -70,20 +90,23 @@ public class JettyTest {
     Files.createDirectories(docBase);
     Files.writeString(docBase.resolve("index.html"), "<html>index</html>");
 
-    withServer(base, docBase, true, url -> {
+    withServer(base, docBase, true, wac -> {
+    }, url -> {
       assertEquals(200, status(url + "/index.html"));
       assertTrue(get(url + "/").contains("index"), "welcome file should serve index.html");
     });
   }
 
   /** 启动真实 Jetty（端口 0 由系统分配），把根 url 交给断言，结束后一定停服清理。 */
-  private static void withServer(Path base, Path docBase, boolean defaultServlet, UrlCheck check)
+  private static void withServer(Path base, Path docBase, boolean defaultServlet,
+      Consumer<WebAppContext> beforeStart, UrlCheck check)
       throws Exception {
     var config = new Server.Config(base.toString(), "/", 0);
     config.setDocBase(docBase.toString());
     config.defaultServletSupport = defaultServlet;
 
     var jetty = new JettyServerBuilder(config).build();
+    beforeStart.accept((WebAppContext) jetty.getHandler());
     var server = new JettyServer(jetty);
     server.start();
     try {

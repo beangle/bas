@@ -5,18 +5,28 @@
 ## [0.14.0] - 未发布
 
 ### Added
+- 新增 Jetty 12（ee10，Servlet 6）嵌入式引擎：`org.beangle.bas.engine.jetty.Bootstrap`（`basctl make jetty`）；
+  错误页对齐 Tomcat 的 `SwallowErrorValve`（生产只回状态与消息，dev 保留完整栈），webapp 启动失败即抛
+- 连接器调优三引擎对齐：Tomcat 新增 `connector.enableLookups` / `connector.disableUploadTimeout`；
+  Undertow / Jetty 支持 `connector.acceptCount` / `connector.connectionTimeout` / `connector.keepAliveTimeout`
+  （对应 server.xml `<http>` 的 `enable-lookups` / `disable-upload-timeout` / `accept-count` / `connection-timeout`）
 - `CmdOptions` 支持 `--docBase=`，由外部 creator 指定已解压的 webapp 目录（未指定时仍走 `guessDocBase`）
-- 新增 Jetty 12（ee10，Servlet 6）嵌入式引擎：`org.beangle.bas.engine.jetty.Bootstrap`（`basctl make jetty`）；错误页对齐
-  Tomcat 的 `SwallowErrorValve`（生产模式不返回调用栈，dev 模式保留完整栈）
-- Undertow 会话只保留 Cookie 跟踪且下发 `HttpOnly`（URL 不再出现 `;jsessionid`），并支持
-  `connector.acceptCount` / `connector.connectionTimeout` / `connector.keepAliveTimeout` 映射
-- Tomcat 支持 `connector.enableLookups` / `connector.disableUploadTimeout`（对应 server.xml `<http>` 的
-  `enable-lookups` / `disable-upload-timeout`）
+- Undertow 新增 `customize(DeploymentInfo)` 扩展点，嵌入方可在部署前追加 servlet / listener / initializer
 
 ### Changed
-- 项目与构件由 sas 更名为 bas：`org.beangle.sas` → `org.beangle.bas`，`beangle-sas-engine` / `beangle-sas-juli` → `beangle-bas-engine` / `beangle-bas-juli`，包名 `org.beangle.sas.*` → `org.beangle.bas.*`
-- `DependencyClassLoader` 本地仓库支持 `-Dbas.repo`（jstart 以 `--local` 透传），`Dependency.findLatest` 兼容平铺与 SNAPSHOT 仓库的多种布局，按修改时间取最新
-- `beangle-bas-juli` 打包丢弃 `META-INF/beangle/dependencies`，避免被 webapp 的 `DependencyClassLoader` 误认为引擎依赖清单
+- 项目与构件由 sas 更名为 bas：`org.beangle.sas` → `org.beangle.bas`，`beangle-sas-engine` / `beangle-sas-juli` → `beangle-bas-engine` / `beangle-bas-juli`，
+  包名 `org.beangle.sas.*` → `org.beangle.bas.*`，系统属性 `sas.home` → `bas.home`、`beangle.sas.disableDependencyLoader` → `beangle.bas.disableDependencyLoader`
+- Undertow / Jetty 会话对齐 Tomcat：只保留 Cookie 跟踪，URL 不再出现 `;jsessionid`；Undertow 额外显式下发 `HttpOnly`（其默认不带）
+- 三个嵌入式引擎统一不解析 `web.xml` / `web-fragment.xml`（Jetty 原先会解析，且与 `defaultServletSupport` 一起依赖容器的
+  `webdefault-ee10.xml`）：应用初始化只走 SCI（`beangle.xml`），默认 servlet 改由引擎显式注册；完整 web.xml 语义交给 `server.xml` 的多实例模式
+- 嵌入式 webapp 类加载器不再暴露 `WEB-INF/classes` / `WEB-INF/lib` 作为资源根（Jetty 新增 `EmbeddedClassLoader`，与 Tomcat 对齐）：
+  应用类与依赖统一由 `-cp` 的父加载器提供，`classpath*:` 资源（如 `beangle.xml`）不再被重复枚举与合并
+- 引擎启动横幅换成纯 ASCII 的 bas 图形（与 `basctl banner` / `bin/bas.sh version` 同一份标志）：只在交互终端打印，
+  标准输出被重定向时只留版本行
+- `Dependency` 重构为 `Resolver` / `LocalRepo` / `Artifact`，本地仓库支持 `-Dbas.repo`（jstart 以 `--local` 透传），
+  兼容平铺与 SNAPSHOT 仓库的多种布局，按修改时间取最新
+- `engine` 与 `beangle-bas-juli` 不再生成 `META-INF/beangle/dependencies`：前者的容器依赖由 `basctl` 的 `engines.ini` 维护，
+  后者带上该清单会被 webapp 的 `DependencyClassLoader` 误认作引擎依赖
 - 移除 `beangle-boot` / `beangle-template` 依赖；Undertow 升级 2.4.4.Final（servlet 2.0.3.Final），jcl-over-slf4j 升级 2.0.20
 - README 重写，明确控制面（`basctl`）与运行时（`jstart`）分离
 

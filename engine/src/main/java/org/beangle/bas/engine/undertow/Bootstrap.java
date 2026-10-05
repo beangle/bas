@@ -29,7 +29,7 @@ public class Bootstrap {
     SLF4J.enableLogbackDevConfig();
     SLF4J.bridgeJul2Slf4j();
     if (EnvProfile.isDevMode()) {
-      System.out.println(BasVersion.logo("undertow"));
+      System.out.println(BasVersion.banner("undertow"));
     }
     var logger = Logger.getLogger(Bootstrap.class.toString());
     Server.Config config = CmdOptions.parse(args);

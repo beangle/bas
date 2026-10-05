@@ -30,7 +30,7 @@ public class Bootstrap {
     SLF4J.enableLogbackDevConfig();
     SLF4J.bridgeJul2Slf4j();
     if (EnvProfile.isDevMode()) {
-      System.out.println(BasVersion.logo("tomcat"));
+      System.out.println(BasVersion.banner("tomcat"));
     }
     var logger = Logger.getLogger(Bootstrap.class.toString());
     Server.Config config = CmdOptions.parse(args);

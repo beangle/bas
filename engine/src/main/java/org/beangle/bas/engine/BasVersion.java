@@ -18,13 +18,34 @@
 package org.beangle.bas.engine;
 
 public class BasVersion {
-  public static String logo(String comments) {
-    var str = """
-       ___    __    ___
-      / __)  /__\\  / __)
-      \\__ \\ /(__)\\ \\__ \\
-      (___/(__)(__)(___/
-      beangle bas 0.14.0""";
+
+  /** 启动标志：纯 ASCII，任何字符集的终端都能显示（与 basctl 的 `asciiLogo()` 是同一份图形）。 */
+  static final String ASCII_LOGO = """
+ ____    __    ___
+(  _ \\  /__\\  / __)
+ ) _ < /(__)\\ \\__ \\
+(____/(__)(__)(___/
+""";
+
+  /**
+   * 启动横幅：图形 + 版本行，`comments` 为容器名（tomcat / undertow / jetty）。
+   *
+   * 图形只在交互终端（{@code System.console() != null}）出现；标准输出被重定向（写 `console.out`、
+   * 管道、CI）时只留版本行，日志里不留图形。
+   */
+  public static String banner(String comments) {
+    return banner(comments, System.console() != null);
+  }
+
+  /** 供测试与调试指定终端条件，见 {@link #banner(String)}。 */
+  static String banner(String comments, boolean console) {
+    var line = line(comments);
+    return console ? ASCII_LOGO + line : line;
+  }
+
+  /** 版本行，如 `beangle bas 0.14.0(tomcat)(DEV mode)`。 */
+  public static String line(String comments) {
+    var str = "beangle bas 0.14.0";
     if (null != comments && !comments.isEmpty()) {
       str += "(" + comments + ")";
     }
