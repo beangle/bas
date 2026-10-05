@@ -169,8 +169,8 @@ bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 ### 引擎入口（creator）
 
 war 的引擎入口（jstart `[engine] init` 协议：准备容器环境、写出最终启动 argv）由
-[`basctl`](https://github.com/beangle/basctl) 提供（`basctl make tomcat-embed` /
-`basctl make undertow-embed` / `basctl make tomcat-dist`）。`engine` 模块只保留
+[`basctl`](https://github.com/beangle/basctl) 提供（`basctl make tomcat` /
+`basctl make undertow` / `basctl make tomcat-server`）。`engine` 模块只保留
 容器运行时类（`tomcat.Bootstrap` / `undertow.Bootstrap`、`DependencyClassLoader`、
 `ExtendableWebappLoader`、`WebappFailFastListener` 等），不再内置 creator main。
 

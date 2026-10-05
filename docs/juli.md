@@ -66,7 +66,7 @@ parent 中 `javacOptions --release` 提升后，必须同步确认 sbt-assembly 
 
 ### 3.1 启动链（Tomcat 托管模式）
 
-托管启动由 `basctl start` 生成 jstart spec、`jstart` 调用 `basctl make tomcat-dist`
+托管启动由 `basctl start` 生成 jstart spec、`jstart` 调用 `basctl make tomcat-server`
 准备引擎目录并写出最终 catalina 启动命令。关键点：
 
 - `beangle-bas-juli` 是 tomcat 引擎的默认依赖（basctl `applyEngineDefault` 补上，见
