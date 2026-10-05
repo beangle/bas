@@ -5,18 +5,40 @@
 ## [0.14.0] - 未发布
 
 ### Added
-- `CmdOptions` 支持 `--docBase=`（`Server.Config.setDocBase`）：由外部 creator 指定已解压的 webapp 目录，未指定时仍走 `guessDocBase`
+- `CmdOptions` 支持 `--docBase=`，由外部 creator 指定已解压的 webapp 目录（未指定时仍走 `guessDocBase`）
 
 ### Changed
-- `DependencyClassLoader` 本地仓库支持 `-Dbas.repo`（jstart 以 `--local` 透传）；`Dependency.findLatest` 适配平铺（`<bas.home>/webapps`）、同库（`--local`）与 `<repo>/../snapshots` 三种 SNAPSHOT 布局，按修改时间取最新
-- `beangle-bas-juli` assembly 丢弃随包生成的 `META-INF/beangle/dependencies`，避免被 webapp 的 `DependencyClassLoader` 误当引擎依赖清单
-- 构建移除 `beangle-boot` / `beangle-template` 依赖；Undertow 升级 2.4.4.Final（servlet 2.0.3.Final）、jcl-over-slf4j 2.0.20
+- 项目与构件由 sas 更名为 bas：`org.beangle.sas` → `org.beangle.bas`，`beangle-sas-engine` / `beangle-sas-juli` → `beangle-bas-engine` / `beangle-bas-juli`，包名 `org.beangle.sas.*` → `org.beangle.bas.*`
+- `DependencyClassLoader` 本地仓库支持 `-Dbas.repo`（jstart 以 `--local` 透传），`Dependency.findLatest` 兼容平铺与 SNAPSHOT 仓库的多种布局，按修改时间取最新
+- `beangle-bas-juli` 打包丢弃 `META-INF/beangle/dependencies`，避免被 webapp 的 `DependencyClassLoader` 误认为引擎依赖清单
+- 移除 `beangle-boot` / `beangle-template` 依赖；Undertow 升级 2.4.4.Final（servlet 2.0.3.Final），jcl-over-slf4j 升级 2.0.20
 - README 重写，明确控制面（`basctl`）与运行时（`jstart`）分离
 
 ### Removed
-- 删除 `core` 模块（`beangle-bas-core`）：配置模型、部署生成器与模板改由 `basctl` 维护
-- 删除 `server` 模块（`beangle-bas` 发行包 zip）与 `netinstall.sh`：`bin/*.sh` 控制脚本改由 `basctl` 内嵌并按 `basctl init` 铺设
-- 移除对 `org.beangle.boot` 的直接依赖
+- 删除 `core` 模块，配置模型、部署生成器与模板改由 `basctl` 维护
+- 删除 `server` 模块（发行包 zip）与 `netinstall.sh`，`bin/*.sh` 控制脚本改由 `basctl init` 铺设
+
+## [0.13.16] - 2026-09-29
+
+### Added
+- 应用全部启动失败时退出进程，释放监听端口
+
+### Changed
+- `resolve` 支持指定实例，`restart` 解析失败即中止
+
+### Removed
+- 移除 `start.sh` 中残留的 `sas_restart` 变量
+
+## [0.13.15] - 2026-09-27
+
+### Changed
+- 升级 beangle-commons 6.3.7、beangle-template 0.2.14、beangle-boot 0.1.30
+- 移除安装脚本中不再需要的 scala-xml 依赖
+
+## [0.13.14] - 2026-09-21
+
+### Changed
+- 升级 Scala 3.9.0
 
 ## [0.13.13] - 2026-09-18
 
