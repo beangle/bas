@@ -1,5 +1,6 @@
 import org.beangle.parent.Dependencies.*
 import org.beangle.parent.Settings.*
+import org.beangle.build.sbt.BootPlugin
 import sbtassembly.AssemblyPlugin
 import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtassembly.{MergeStrategy, PathList}
@@ -44,6 +45,9 @@ lazy val root = (project in file("."))
   .aggregate(engine, juli)
 
 lazy val engine = (project in file("engine"))
+  // engine 的容器依赖由 basctl 的 engines.ini 维护；随包生成
+  // META-INF/beangle/dependencies 会把编译期 classpath 固化下来，反而造成漂移。
+  .disablePlugins(BootPlugin)
   .settings(
     name := "beangle-bas-engine",
     common,
@@ -51,6 +55,7 @@ lazy val engine = (project in file("engine"))
   )
 
 lazy val juli = (project in file("juli"))
+  .disablePlugins(BootPlugin)
   .settings(
     name := "beangle-bas-juli",
     common,
