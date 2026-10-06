@@ -147,10 +147,10 @@ bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 | `hosts/host` | 主机定义（name/ip） |
 | `resources/resource` | JNDI 资源，供 webapp 引用 |
 | `farms/farm` | 实例组：堆大小（`max-heap-size`）、HTTP Connector、server 列表 |
-| `webapps/webapp` | 应用：uri、contextPath、`run-at`（部署目标）、libs、`resource-ref` |
+| `webapps/webapp` | 应用：uri、contextPath、`run-at`（部署目标）、libs、对外路径 `url` |
 
-`<proxy>` 节点（Nginx/HAProxy 反代配置）不在当前控制面（basctl）的迁移范围内，
-会被忽略；反代请另行生成/维护。
+`<proxy>` / `<resource-ref>` / `<realm>` 不在支持范围内：反代配置（Nginx/HAProxy）另行生成/
+维护，JNDI 资源与 Realm 尚未接入控制面；写进 `conf/server.xml` 会被忽略。
 
 `repository` / `snapshot-repo` 的 `remote` 与 `token` 都支持环境变量占位：`${bas_remote_url}`
 解析为 `bas_remote_url`（截断到 `/api/` 之前），`token="${bas_remote_token}"` 解析为
