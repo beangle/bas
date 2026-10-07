@@ -12,7 +12,7 @@
 - **远程配置分发**：`bas.sh pull`（`basctl pull`）从控制端拉取 `server.xml`，`start.sh` 启动前自动检查远端配置
 - **统一日志**：`juli` 模块将 Tomcat 日志桥接到 SLF4J / Logback，集中管理
 - **防火墙配置生成**：由 basctl 按 `conf/server.xml` 生成 firewalld 端口规则
-- **JNDI 资源与 Realm**：支持 Webapp 级 JNDI 资源引用与安全域配置
+- **对外路径**：webapp 用 `<url>` 声明对外前缀（可多个），供前端代理与 setline 按路径转发
 
 ## 架构
 
@@ -145,7 +145,7 @@ bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 | `snapshot-repo` | SNAPSHOT 仓库，支持 `${bas_remote_url}` / `${bas_remote_token}` 占位 |
 | `engines/engine` | 引擎定义（Tomcat 10/11 / Undertow / Jetty 12），含版本、JSP 支持、listener、jar |
 | `hosts/host` | 主机定义（name/ip） |
-| `resources/resource` | JNDI 资源，供 webapp 引用 |
+| `resources/resource` | JNDI 资源定义（`resource-ref` 尚未接入控制面，暂不生效） |
 | `farms/farm` | 实例组：堆大小（`max-heap-size`）、HTTP Connector、server 列表 |
 | `webapps/webapp` | 应用：uri、contextPath、`run-at`（部署目标）、libs、对外路径 `url` |
 
