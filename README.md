@@ -50,10 +50,10 @@ bin/bas.sh run http://host.com/path/app.war [--port=8080] [other_args]
 ```
 
 组件目录缺省 `/tmp/bas`，可用 `--base=` / `--instance=` 改变；工作目录由 `bas.sh run` 固定为
-`$BAS_HOME`（也可显式传 `--workdir=`）。引擎与容器版本内置在 `basctl` 中，可用
-`bas_engine_version` / `bas_scala_version` / `bas_commons_version` / `bas_slf4j_version` /
-`bas_logback_version` / `bas_tomcat_version` / `bas_undertow_version` /
-`bas_undertow_ee_version` 环境变量覆盖，详见 basctl 的 [docs/run.md](https://github.com/beangle/basctl/blob/develop/docs/run.md)。
+`$BAS_HOME`（也可显式传 `--workdir=`）。容器类型与版本由 `--engine=<type>-<version>` 一次给出
+（`tomcat` / `undertow` / `jetty` / `tomcat-server`），依赖集固定在 basctl 内置的 `engines.ini`；
+bas 引擎版本缺省取 basctl 内置值，可用 `--bas=<version>` 覆盖——单应用的版本不经环境变量传递。
+详见 basctl 的 [docs/run.md](https://github.com/beangle/basctl/blob/develop/docs/run.md)。
 
 `--dev=true` 开启开发模式（热加载、错误页），等价于 `-Dbeangle.config.profiles=dev`。该 profile 与 beangle-commons 的
 `Environment` 共用同一个 key 与语义（逗号分隔、调试模式自动视为 dev、`-dev` 可关闭自动行为）。
@@ -115,7 +115,7 @@ SecureRandom 算法交给平台默认（Linux/macOS 为 NativePRNG，其余平�
 ### 管理命令
 
 `bin/*.sh` 是薄封装：解析、生成、启停等控制面动作全部委托本机 `basctl`，运行时交给 `jstart`。
-两者默认取 `PATH` 上的同名命令，可用环境变量 `bas_basctl` / `bas_jstart` 指向本地构建产物。
+两者默认取 `PATH` 上的同名命令，可用环境变量 `beangle_basctl` / `beangle_jstart` 指向本地构建产物。
 
 ```bash
 bin/start.sh farm_name          # 生成 spec 并后台启动（basctl start），启动前按需刷新远端 server.xml
@@ -166,11 +166,11 @@ bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
 | 正式版 war / 引擎构件 / 扩展 libs | `jstart fetch <gav> --local=<local> --remote=<remotes>`（release 仓库） |
 | 开发版（SNAPSHOT）war / libs | `jstart fetch <gav> --local=<local> --snapshot-remote=<remotes>`（快照仓库；jstart 按上游 `latest` 头或 `maven-metadata.xml` 解析最新时间戳构建） |
 | war 内依赖解析（原 `AppResolver`） | `jstart resolve <war> --local=<local> --remote=<remotes>` |
-| 嵌入式模式（`basctl run`） | `jstart run <spec>`（spec 由 basctl 生成，容器准备走 `basctl make *-embed`） |
+| 嵌入式模式（`basctl run`） | `jstart run <spec>`（spec 由 basctl 生成，容器准备走 `basctl make <type>`） |
 
-- 命令位置由环境变量 `bas_jstart` 指定，缺省取 `PATH` 上的 `jstart`；
+- 命令位置由环境变量 `beangle_jstart` 指定，缺省取 `PATH` 上的 `jstart`；
 - 需在部署主机上安装 `jstart`（见 beangle/jstart 项目）；缺失时解析会失败并提示
-  `Cannot run jstart, install jstart or set bas_jstart to its path.`；
+  `Cannot run jstart, install jstart or set beangle_jstart to its path.`；
 - 仓库读令牌按 jstart 的约定通过子进程环境变量 `micdn_token` 传递（对应
   `token="${bas_remote_token}"`），构件 GET 带 `Authorization: Bearer`；
 - 镜像列表与 Maven Central 兜底由 jstart 决定，且**只作用于正式版**：bas 只透传
