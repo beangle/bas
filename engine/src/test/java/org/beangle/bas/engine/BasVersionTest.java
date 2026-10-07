@@ -21,21 +21,25 @@ package org.beangle.bas.engine;
 public class BasVersionTest {
 
   public static void main(String[] args) {
+    // 版本号来自 build.sbt 生成的常量，测试不写死具体版本（发版不用改测试）
+    var version = BasVersionInfo.VERSION;
+    assertTrue(version.matches("\\d+\\.\\d+\\.\\d+.*"), "version should look like x.y.z, but was " + version);
+
     // 非终端（写 console.out / 管道 / CI）：只有版本行
-    assertEquals("beangle bas 0.14.0(tomcat)", BasVersion.banner("tomcat", false));
+    assertEquals("beangle bas " + version + "(tomcat)", BasVersion.banner("tomcat", false));
 
     // 交互终端：ASCII 图形 + 版本行，整段保持纯 ASCII
     var art = BasVersion.banner("tomcat", true);
     assertTrue(art.startsWith(" ____"), "logo should start with the figure");
     assertTrue(art.contains("(  _ \\"), "logo should read bas, not sas");
-    assertTrue(art.endsWith("\nbeangle bas 0.14.0(tomcat)"), "version line should follow the figure");
+    assertTrue(art.endsWith("\nbeangle bas " + version + "(tomcat)"), "version line should follow the figure");
     for (char ch : art.toCharArray()) {
       assertTrue(ch < 128, "banner must stay in ASCII");
     }
 
     // 版本行：comments 为空时不带括号
-    assertEquals("beangle bas 0.14.0", BasVersion.line(null));
-    assertEquals("beangle bas 0.14.0", BasVersion.line(""));
+    assertEquals("beangle bas " + version, BasVersion.line(null));
+    assertEquals("beangle bas " + version, BasVersion.line(""));
 
     System.out.println("BasVersionTest passed");
   }

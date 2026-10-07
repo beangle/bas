@@ -205,6 +205,9 @@ sbt package    # 打包（engine、juli 的 jar；juli 走 assembly）
 - sbt 2.0.x / Scala 3.3.x
 - 嵌入式模式需要 JDK 21+（虚拟线程）；server 部署模式 Tomcat 10.x 可用 JDK 17+，Tomcat 11 需 JDK 21+
 - 依赖管理基于 [sbt-beangle-parent](https://github.com/beangle/parent)
+- **版本只有一个来源**：`build.sbt` 的 `version`。engine 的启动横幅读的是编译期由它生成的
+  `BasVersionInfo`（`version` 出现在 `server.xml` 的 `<bas version>` 里，两者要保持一致），
+  因此发版只需改 `build.sbt` 一处，不必再改 Java 代码或测试
 
 ## License
 

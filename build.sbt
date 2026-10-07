@@ -55,6 +55,25 @@ lazy val engine = (project in file("engine"))
   .settings(
     name := "beangle-bas-engine",
     common,
+    // 引擎版本只有一个来源：本文件的 version。生成的常量类随 engine 编译打包，运行期不必读
+    // MANIFEST 或资源文件（GraalVM native-image 也无需注册资源），发版不再需要改 Java 代码。
+    Compile / sourceGenerators += Def.task {
+      val file = (Compile / sourceManaged).value / "org" / "beangle" / "bas" / "engine" / "BasVersionInfo.java"
+      IO.write(
+        file,
+        "package org.beangle.bas.engine;\n\n" +
+          "/** 由 build.sbt 生成，勿手改：`version` 的值，见 BasVersion。 */\n" +
+          "public final class BasVersionInfo {\n\n" +
+          "  public static final String VERSION = \"" + version.value + "\";\n\n" +
+          "  private BasVersionInfo() {\n" +
+          "  }\n" +
+          "}\n"
+      )
+      Seq(file)
+    }.taskValue,
+    // 源码（含生成的 BasVersionInfo）带中文注释：显式 UTF-8，避免在非 UTF-8 平台（中文 Windows
+    // 的 GBK）上解码出错；JDK 18+ 默认虽是 UTF-8，JDK 17 仍看平台编码。
+    javacOptions ++= Seq("-encoding", "UTF-8"),
     libraryDependencies ++= Seq(tomcat_embeded_core, undertow_core, undertow_servlet, jetty_webapp, jetty_annotations)
   )
 

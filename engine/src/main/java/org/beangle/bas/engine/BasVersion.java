@@ -43,9 +43,14 @@ public class BasVersion {
     return console ? ASCII_LOGO + line : line;
   }
 
-  /** 版本行，如 `beangle bas 0.14.0(tomcat)(DEV mode)`。 */
+  /**
+   * 版本行，如 `beangle bas <version>(tomcat)(DEV mode)`。
+   *
+   * 版本号取自编译期生成的 {@link BasVersionInfo}（唯一来源是 build.sbt 的 `version`），
+   * 因此发版只需改 build.sbt。
+   */
   public static String line(String comments) {
-    var str = "beangle bas 0.14.0";
+    var str = "beangle bas " + BasVersionInfo.VERSION;
     if (null != comments && !comments.isEmpty()) {
       str += "(" + comments + ")";
     }
