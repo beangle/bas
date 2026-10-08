@@ -45,7 +45,7 @@ basctl init --force /opt/bas  # 升级 basctl 后刷新脚本
 ```bash
 bin/bas.sh run /path/to/app.war [--port=8080] [--path=/app] [jvm_options]
 bin/bas.sh run [jvm_options] group:artifact:version [--engine=undertow] [other_args]
-bin/bas.sh run /path/to/app.war --engine=jetty-12.0.30 [other_args]
+bin/bas.sh run /path/to/app.war --engine=jetty-12.1.14 [other_args]
 bin/bas.sh run http://host.com/path/app.war [--port=8080] [other_args]
 ```
 
@@ -179,9 +179,10 @@ bin/bas.sh pull                 # 从控制端拉取 server.xml（basctl pull）
   兜底）：`<snapshot-repo>` 的 `remote` 原样透传为 `--snapshot-remote=`，未配置时再以
   `--offline` 调 jstart，彻底只用本地已有构件（不探测、不下载）；
 - 开发版（SNAPSHOT）的别名解析也在 jstart 内完成：按 `--snapshot-remote` 顺序 HEAD 别名读 micdn 的
-  `latest` 响应头，其次取版本目录的 `maven-metadata.xml`，把时间戳文件落到本地快照库
-  （默认 `~/.m2/snapshots`）并复核 `.sha1`；本地已有同一构建时跳过下载，上游不可达时
-  退回本地已有文件。HEAD 保持匿名（micdn 的 `<auth download-key>` 不限制 HEAD）。
+  `latest` 响应头，其次取版本目录的 `maven-metadata.xml`，把时间戳文件落到本地仓库
+  （默认 `~/.m2/repository`，与正式版同库同布局的 `<g>/<a>/<v>-SNAPSHOT/` 目录）并复核
+  `.sha1`；本地已有同一构建时跳过下载，上游不可达时退回本地已有文件。HEAD 保持匿名
+  （micdn 的 `<auth download-key>` 不限制 HEAD）。
   因此 bas 不再自己发 HTTP 请求，只是把快照仓库的 `--local`/`--snapshot-remote`/
   `micdn_token` 透传给 jstart。
 

@@ -5,7 +5,7 @@
 ## [0.14.0] - 2026-10-07
 
 ### Added
-- 新增 Jetty 12（ee10 / Servlet 6）嵌入式引擎（`--engine=jetty-12.0.30`、`basctl make jetty`）：错误页
+- 新增 Jetty 12（ee10 / Servlet 6）嵌入式引擎（`--engine=jetty-12.1.14`、`basctl make jetty`）：错误页
   语义对齐 Tomcat 的 `SwallowErrorValve`（生产只回状态与消息，dev 保留完整栈），webapp 启动失败即抛错
 - `server.xml` 的 webapp 支持多个对外路径 `<url>`（不再只有 contextPath 一个前缀），供前端代理与
   setline 按前缀转发

@@ -106,7 +106,7 @@ public class Dependency {
 
     /**
      * 查找工具的文件路径
-     * 如果是SNAPSHOT版本，从snapshotBase(webapps)和DefaultSnapshotBase(.m2/snapshots)中找出最新的
+     * 如果是SNAPSHOT版本，从本地仓库的版本目录与 snapshotBase（平铺目录，如 webapps）中找出最新的
      * 如果是常规版本，从base对应的maven本地仓库中查找
      *
      * @param artifact snapshot/normal
@@ -122,7 +122,7 @@ public class Dependency {
     }
 
     /**
-     * 从本地仓库（snapshotBase/DefaultSnapshotBase）中，查找最新的工件对应的文件
+     * 从本地仓库与平铺目录（snapshotBase）中，查找最新的工件对应的文件
      *
      * @param artifact
      * @return
@@ -137,10 +137,8 @@ public class Dependency {
       var suffix = "." + artifact.packaging;
       List<File> candidates = new ArrayList<>();
       if (flat.isFile()) candidates.add(flat);
-      // 仓库同一目录：jstart 显式 --local 时快照与正式版合二为一
+      // 仓库版本目录：release 与 SNAPSHOT 同库同布局
       addNewest(candidates, new File(base, dirPath(artifact)), prefix, suffix);
-      // 默认快照库：<repo>/../snapshots（jstart 默认、beangle-boot 默认）
-      addNewest(candidates, new File(getDefaultSnapshotBase(), dirPath(artifact)), prefix, suffix);
       File best = null;
       for (File f : candidates) {
         if (best == null || f.lastModified() > best.lastModified()) best = f;
@@ -161,9 +159,6 @@ public class Dependency {
       return artifact.groupId.replace('.', '/') + "/" + artifact.artifactId + "/" + artifact.version;
     }
 
-    private String getDefaultSnapshotBase() {
-      return new File(base).getParent() + "/snapshots";
-    }
   }
 
   public static class Artifact {

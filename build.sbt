@@ -6,7 +6,7 @@ import sbtassembly.AssemblyPlugin.autoImport.*
 import sbtassembly.{MergeStrategy, PathList}
 
 organization := "org.beangle.bas"
-version := "0.14.0"
+version := "0.14.0-SNAPSHOT"
 
 scmInfo := Some(
   ScmInfo(
@@ -31,7 +31,7 @@ val beangle_commons_ver = "6.3.7"
 val apache_tomcat_ver = "11.0.26"
 val io_undertow_ver = "2.4.4.Final"
 val undertow_ee_ver = "2.0.3.Final"
-val jetty_ver = "12.0.30"
+val jetty_ver = "12.1.14"
 
 val beangle_commons = "org.beangle.commons" % "beangle-commons" % beangle_commons_ver
 val tomcat_juli = "org.apache.tomcat" % "tomcat-juli" % apache_tomcat_ver

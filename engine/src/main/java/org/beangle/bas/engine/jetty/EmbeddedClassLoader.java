@@ -17,7 +17,7 @@
 
 package org.beangle.bas.engine.jetty;
 
-import org.eclipse.jetty.ee10.webapp.WebAppClassLoader;
+import org.eclipse.jetty.ee.webapp.WebAppClassLoader;
 import org.eclipse.jetty.ee10.webapp.WebAppContext;
 
 import java.net.URL;
@@ -36,6 +36,10 @@ import java.util.Enumeration;
  * <p>这里与 tomcat 的 {@link org.beangle.bas.engine.tomcat.EmbeddedClassLoader} 对齐：webapp 侧
  * 不提供资源，统一由父加载器给出。类的加载不受影响——{@link java.net.URLClassLoader#findClass}
  * 不经过这两个方法。
+ *
+ * <p>基类取 {@code org.eclipse.jetty.ee.webapp.WebAppClassLoader}（而不是 ee10 的同名类）：后者
+ * 自 12.1.0 起标记为 {@code @Deprecated(forRemoval = true)}，且其父类已上移到 ee 包；
+ * ee10 的 {@link WebAppContext} 直接实现本类所需的 {@code Context} 接口，两者可自由组合。
  */
 public class EmbeddedClassLoader extends WebAppClassLoader {
 

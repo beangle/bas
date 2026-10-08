@@ -28,7 +28,6 @@ public class DependencyTest {
   public static void main(String[] args) throws Exception {
     testRelease();
     testSnapshotInMergedRepo();
-    testSnapshotInDefaultLibrary();
     testSnapshotInFlatWebapps();
     System.out.println("DependencyTest passed");
   }
@@ -55,19 +54,6 @@ public class DependencyTest {
     Dependency.LocalRepo local = new Dependency.LocalRepo(new File(tmp, "repo").getAbsolutePath(),
       new File(tmp, "webapps").getAbsolutePath());
     assertEquals(newest.getAbsolutePath(), local.path(new Dependency.Artifact("org.test:demo:1.0-SNAPSHOT")));
-    Tools.delete(tmp);
-  }
-
-  /** jstart 默认：快照落在 <repo>/../snapshots/g/a/version/。 */
-  private static void testSnapshotInDefaultLibrary() throws IOException {
-    File tmp = Files.createTempDirectory("dep-default").toFile();
-    File vdir = new File(new File(tmp, "snapshots"), "org/test/demo/1.0-SNAPSHOT");
-    File jar = new File(vdir, "demo-1.0-20260102.020202-2.jar");
-    touch(jar);
-    new File(tmp, "repo").mkdirs();
-    Dependency.LocalRepo local = new Dependency.LocalRepo(new File(tmp, "repo").getAbsolutePath(),
-      new File(tmp, "webapps").getAbsolutePath());
-    assertEquals(jar.getAbsolutePath(), local.path(new Dependency.Artifact("org.test:demo:1.0-SNAPSHOT")));
     Tools.delete(tmp);
   }
 
